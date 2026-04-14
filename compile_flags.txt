@@ -1,0 +1,7 @@
+-ansi
+-Wall
+-Wextra
+-Werror
+-pedantic
+-Wno-long-long
+-Os
