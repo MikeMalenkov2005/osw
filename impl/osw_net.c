@@ -1,13 +1,18 @@
 #include "osw.h"
 
+#include <string.h>
+
 #ifdef _WIN32
 #include <winsock2.h>
 #include <ws2tcpip.h>
 #pragma comment(lib, "ws2_32.lib")
 #else
+
+#include <sys/types.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
+#include <sys/time.h>
 #include <unistd.h>
 #include <netdb.h>
 #include <fcntl.h>
@@ -60,7 +65,7 @@ static int _SOCKET_SetTimeout(SOCKET s, unsigned long millis) {
   return setsockopt(s, SOL_SOCKET, SO_RCVTIMEO, &tv, sizeof(tv));
 }
 
-static int _SOCKET_SetBlocking(SOCKET s, bool blocking) {
+static int _SOCKET_SetBlocking(SOCKET s, int blocking) {
   int flags = fcntl(s, F_GETFL, 0);
   if (flags == -1) return -1;
   if (blocking) flags &= ~O_NONBLOCK;
@@ -100,7 +105,8 @@ static OSW_NetAddress _OSW_NetDecode(const struct sockaddr *addr)
   return result;
 }
 
-static int _OSW_NetEncode(struct sockaddr *out, const OSW_NetAddress *addr)
+static socklen_t _OSW_NetEncode(
+    struct sockaddr *out, const OSW_NetAddress *addr)
 {
   if (out && addr) switch (addr->type)
   {
@@ -140,7 +146,7 @@ OSW_NetSocket OSW_NetOpenDatagram(const OSW_NetAddress *addr)
   unsigned char buffer[128];
   OSW_NetSocket result = NULL;
   struct sockaddr *sa = (void*)buffer;
-  int len = _OSW_NetEncode(sa, addr);
+  socklen_t len = _OSW_NetEncode(sa, addr);
   if (len > 0 && _SOCKET_Init() && (result = OSW_malloc(sizeof(*result))))
   {
     result->sock = socket(sa->sa_family, SOCK_DGRAM, 0);
@@ -171,7 +177,7 @@ OSW_NetSocket OSW_NetOpenServer(const OSW_NetAddress *addr, int backlog)
   unsigned char buffer[128];
   OSW_NetSocket result = NULL;
   struct sockaddr *sa = (void*)buffer;
-  int len = _OSW_NetEncode(sa, addr);
+  socklen_t len = _OSW_NetEncode(sa, addr);
   if (len > 0 && _SOCKET_Init() && (result = OSW_malloc(sizeof(*result))))
   {
     result->sock = socket(sa->sa_family, SOCK_STREAM, 0);
@@ -202,7 +208,7 @@ OSW_NetSocket OSW_NetConnect(const OSW_NetAddress *addr)
   unsigned char buffer[128];
   OSW_NetSocket result = NULL;
   struct sockaddr *sa = (void*)buffer;
-  int len = _OSW_NetEncode(sa, addr);
+  socklen_t len = _OSW_NetEncode(sa, addr);
   if (len > 0 && _SOCKET_Init() && (result = OSW_malloc(sizeof(*result))))
   {
     result->sock = socket(sa->sa_family, SOCK_STREAM, 0);
@@ -233,7 +239,7 @@ OSW_NetSocket OSW_NetAccept(OSW_NetSocket server)
   unsigned char buffer[128];
   OSW_NetSocket result = NULL;
   struct sockaddr *sa = (void*)buffer;
-  int len = sizeof(buffer);
+  socklen_t len = sizeof(buffer);
   if (server && server->sock != INVALID_SOCKET
       && server->type == OSW_NET_SERVER && _SOCKET_Init()
       && (result = OSW_malloc(sizeof(*result))))
@@ -281,37 +287,37 @@ OSW_NetAddress OSW_NetGetAddress(OSW_NetSocket socket)
     ? socket->addr : none;
 }
 
-int OSW_NetSend(const void *buffer, int size, OSW_NetSocket socket)
+int OSW_NetSend(OSW_NetSocket socket, const void *buffer, int size)
 {
   return buffer && size > 0 && socket && socket->sock != INVALID_SOCKET
     && socket->type == OSW_NET_STREAM && _SOCKET_Init()
     ? send(socket->sock, buffer, size, 0) : -1;
 }
 
-int OSW_NetSendDatagram(const void *buffer,
-    int size, OSW_NetSocket socket, const OSW_NetAddress *addr)
+int OSW_NetSendDatagram(OSW_NetSocket socket,
+    const void *buffer, int size, const OSW_NetAddress *addr)
 {
   unsigned char sa_buffer[128];
   struct sockaddr *sa = (void*)sa_buffer;
-  int len = _OSW_NetEncode(sa, addr);
+  socklen_t len = _OSW_NetEncode(sa, addr);
   return buffer && size > 0 && len > 0 && socket && _SOCKET_Init()
     && socket->sock != INVALID_SOCKET && socket->type == OSW_NET_DATAGRAM
 ? sendto(socket->sock, buffer, size, 0, sa, len) : -1;
 }
 
-int OSW_NetReceive(void *buffer, int size, OSW_NetSocket socket)
+int OSW_NetReceive(OSW_NetSocket socket, void *buffer, int size)
 {
   return buffer && size > 0 && socket && socket->sock != INVALID_SOCKET
     && socket->type == OSW_NET_STREAM && _SOCKET_Init()
     ? recv(socket->sock, buffer, size, 0) : -1;
 }
 
-int OSW_NetReceiveDatagram(void *buffer,
-    int size, OSW_NetSocket socket, OSW_NetAddress *addr)
+int OSW_NetReceiveDatagram(OSW_NetSocket socket,
+    void *buffer, int size, OSW_NetAddress *addr)
 {
   unsigned char sa_buffer[128];
   struct sockaddr *sa = (void*)sa_buffer;
-  int len = sizeof(sa_buffer);
+  socklen_t len = sizeof(sa_buffer);
   int result = -1;
   if (buffer && size > 0 && socket && socket->sock != INVALID_SOCKET
       && socket->type == OSW_NET_DATAGRAM && _SOCKET_Init())

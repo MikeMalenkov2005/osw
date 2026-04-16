@@ -6,3 +6,4 @@
 -Wno-long-long
 -Os
 -DOSW_NET
+-D_POSIX_C_SOURCE=200112L

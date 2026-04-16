@@ -91,7 +91,7 @@ long long OSW_GetFileSize(OSW_File file)
   return value.QuadPart;
 }
 
-size_t OSW_ReadFile(void *buffer, size_t size, OSW_File file)
+size_t OSW_ReadFile(OSW_File file, void *buffer, size_t size)
 {
   size_t remain, bytes = 0;
   DWORD toread = 0, count = 0;
@@ -107,7 +107,7 @@ size_t OSW_ReadFile(void *buffer, size_t size, OSW_File file)
   return bytes;
 }
 
-size_t OSW_WriteFile(const void *buffer, size_t size, OSW_File file)
+size_t OSW_WriteFile(OSW_File file, const void *buffer, size_t size)
 {
   size_t remain, bytes = 0;
   DWORD towrite = 0, count = 0;

@@ -50,8 +50,8 @@ void OSW_CloseFile(OSW_File file);
 long long OSW_SeekFile(OSW_File file, long long offset, int whence);
 long long OSW_GetFileSize(OSW_File file);
 
-size_t OSW_ReadFile(void *buffer, size_t size, OSW_File file);
-size_t OSW_WriteFile(const void *buffer, size_t size, OSW_File file);
+size_t OSW_ReadFile(OSW_File file, void *buffer, size_t size);
+size_t OSW_WriteFile(OSW_File file, const void *buffer, size_t size);
 
 int OSW_RenameFile(const char *path, const char *new_path);
 int OSW_DeleteFile(const char *path);
@@ -143,13 +143,13 @@ void OSW_NetClose(OSW_NetSocket socket);
 int OSW_NetGetSocketType(OSW_NetSocket socket);
 OSW_NetAddress OSW_NetGetAddress(OSW_NetSocket socket);
 
-int OSW_NetSend(const void *buffer, int size, OSW_NetSocket socket);
-int OSW_NetSendDatagram(const void *buffer,
-    int size, OSW_NetSocket socket, const OSW_NetAddress *addr);
+int OSW_NetSend(OSW_NetSocket socket, const void *buffer, int size);
+int OSW_NetSendDatagram(OSW_NetSocket socket,
+    const void *buffer, int size, const OSW_NetAddress *addr);
 
-int OSW_NetReceive(void *buffer, int size, OSW_NetSocket socket);
-int OSW_NetReceiveDatagram(void *buffer,
-    int size, OSW_NetSocket socket, OSW_NetAddress *addr);
+int OSW_NetReceive(OSW_NetSocket socket, void *buffer, int size);
+int OSW_NetReceiveDatagram(OSW_NetSocket socket,
+    void *buffer, int size, OSW_NetAddress *addr);
 
 int OSW_NetSetTimeout(OSW_NetSocket socket, unsigned long millis);
 int OSW_NetSetBlocking(OSW_NetSocket socket, int blocking);
