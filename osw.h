@@ -3,18 +3,25 @@
 
 #include <stddef.h>
 
+#ifdef __cplusplus
+#define _OSW_C_BEGIN  extern "C" {
+#define _OSW_C_END    }
+#else
+#define _OSW_C_BEGIN
+#define _OSW_C_END
+#endif
+
+_OSW_C_BEGIN
+
 #ifdef _WIN32
 #define OSW_OSAPI __stdcall
 #else
 #define OSW_OSAPI
 #endif
 
-#define _OSW_DEFINE_HANDLE(name) \
-  typedef struct OSW_ ## name { int _; } *OSW_ ## name
-
 /* DYNAMIC LINKING */
 
-_OSW_DEFINE_HANDLE(Library);
+typedef struct _OSW_Library *OSW_Library;
 
 typedef void OSW_OSAPI OSW_LibraryProc(void);
 
@@ -25,7 +32,7 @@ OSW_LibraryProc *OSW_GetProcAddress(OSW_Library lib, const char *name);
 
 /* FILE API */
 
-_OSW_DEFINE_HANDLE(File);
+typedef struct _OSW_File *OSW_File;
 
 #define OSW_OPEN_READ       1
 #define OSW_OPEN_WRITE      2
@@ -57,7 +64,7 @@ int OSW_DeleteDirectory(const char *path);
 
 /* THREAD API */
 
-_OSW_DEFINE_HANDLE(Thread);
+typedef struct _OSW_Thread *OSW_Thread;
 typedef int OSW_OSAPI OSW_ThreadProc(void*);
 
 OSW_Thread OSW_CreateThread(OSW_ThreadProc *proc, void *param);
@@ -67,6 +74,89 @@ void OSW_ExitProcess(int code);
 void OSW_ExitThread(int code);
 
 int OSW_SwitchThread(void);
+
+typedef struct _OSW_Mutex *OSW_Mutex;
+
+OSW_Mutex OSW_CreateMutex(void);
+int OSW_DeleteMutex(OSW_Mutex mutex);
+
+int OSW_LockMutex(OSW_Mutex mutex);
+int OSW_UnlockMutex(OSW_Mutex mutex);
+int OSW_TryLockMutex(OSW_Mutex mutex);
+
+typedef struct _OSW_TLS *OSW_TLS;
+
+OSW_TLS OSW_CreateTLS(void);
+int OSW_DeleteTLS(OSW_TLS tls);
+
+void *OSW_GetTLS(OSW_TLS tls);
+int OSW_SetTLS(OSW_TLS tls, void *value);
+
+/* NETWORKING API */
+
+#ifdef OSW_NET
+
+#define OSW_NET_NONE  0
+#define OSW_NET_IPv4  1
+#define OSW_NET_IPv6  2
+
+typedef struct _OSW_NetAddressIPv4
+{
+  unsigned short type;
+  unsigned short port;
+  unsigned char addr[4];
+} OSW_NetAddressIPv4;
+
+typedef struct _OSW_NetAddressIPv6
+{
+  unsigned short type;
+  unsigned short port;
+  unsigned int flow_info;
+  unsigned char addr[16];
+  unsigned int scope_id;
+} OSW_NetAddressIPv6;
+
+typedef union _OSW_NetAddress
+{
+  unsigned short type;
+  OSW_NetAddressIPv4 ipv4;
+  OSW_NetAddressIPv6 ipv6;
+} OSW_NetAddress;
+
+OSW_NetAddress OSW_NetResolve(const char *host, const char *service, int index);
+
+#define OSW_NET_INVALID   0
+#define OSW_NET_DATAGRAM  1
+#define OSW_NET_SERVER    2
+#define OSW_NET_STREAM    3
+
+typedef struct _OSW_NetSocket *OSW_NetSocket;
+
+OSW_NetSocket OSW_NetOpenDatagram(const OSW_NetAddress *addr);
+OSW_NetSocket OSW_NetOpenServer(const OSW_NetAddress *addr, int backlog);
+
+OSW_NetSocket OSW_NetConnect(const OSW_NetAddress *addr);
+OSW_NetSocket OSW_NetAccept(OSW_NetSocket server);
+
+void OSW_NetClose(OSW_NetSocket socket);
+
+int OSW_NetGetSocketType(OSW_NetSocket socket);
+OSW_NetAddress OSW_NetGetAddress(OSW_NetSocket socket);
+
+int OSW_NetSend(const void *buffer, int size, OSW_NetSocket socket);
+int OSW_NetSendDatagram(const void *buffer,
+    int size, OSW_NetSocket socket, const OSW_NetAddress *addr);
+
+int OSW_NetReceive(void *buffer, int size, OSW_NetSocket socket);
+int OSW_NetReceiveDatagram(void *buffer,
+    int size, OSW_NetSocket socket, OSW_NetAddress *addr);
+
+int OSW_NetSetTimeout(OSW_NetSocket socket, unsigned long millis);
+int OSW_NetSetBlocking(OSW_NetSocket socket, int blocking);
+
+#endif
+
+_OSW_C_END
 
 #endif
 

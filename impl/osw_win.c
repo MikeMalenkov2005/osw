@@ -1,5 +1,6 @@
 #include "osw.h"
 
+#include <WinSock2.h>
 #include <Windows.h>
 
 /* WINDOWS UNICODE */
@@ -41,7 +42,7 @@ OSW_LibraryProc *OSW_GetProcAddress(OSW_Library lib, const char *name)
 
 /* FILE API */
 
-OSW_File osw_file_open(const char *path, int flags)
+OSW_File OSW_OpenFile(const char *path, int flags)
 {
   HANDLE handle = INVALID_HANDLE_VALUE;
   LPWSTR wpath = _OSW_DecodeUTF8(path);
@@ -205,5 +206,51 @@ void OSW_ExitThread(int code)
 int OSW_SwitchThread(void)
 {
   return SwitchToThread();
+}
+
+OSW_Mutex OSW_CreateMutex(void)
+{
+  return (OSW_Mutex)CreateMutexW(NULL, FALSE, NULL);
+}
+
+int OSW_DeleteMutex(OSW_Mutex mutex)
+{
+  return CloseHandle(mutex);
+}
+
+int OSW_LockMutex(OSW_Mutex mutex)
+{
+  return WaitForSingleObject((HANDLE)mutex, INFINITE) == WAIT_OBJECT_0;
+}
+
+int OSW_UnlockMutex(OSW_Mutex mutex)
+{
+  return ReleaseMutex((HANDLE)mutex);
+}
+
+int OSW_TryLockMutex(OSW_Mutex mutex)
+{
+  return WaitForSingleObject((HANDLE)mutex, 0) == WAIT_OBJECT_0;
+}
+
+OSW_TLS OSW_CreateTLS(void)
+{
+  DWORD id = TlsAlloc();
+  return id == TLS_OUT_OF_INDEXES ? NULL : (OSW_TLS)((size_t)id + 1);
+}
+
+int OSW_DeleteTLS(OSW_TLS tls)
+{
+  return tls && TlsFree((size_t)tls - 1);
+}
+
+void *OSW_GetTLS(OSW_TLS tls)
+{
+  return tls ? TlsGetValue((size_t)tls - 1) : NULL;
+}
+
+int OSW_SetTLS(OSW_TLS tls, void *value)
+{
+  return tls && TlsSetValue((size_t)tls - 1, value);
 }
 

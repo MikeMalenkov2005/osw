@@ -1,8 +1,16 @@
+#include "osw.h"
+
+_OSW_C_BEGIN
+
 #if defined(_WIN32)
 #include "impl/osw_win.c"
-#elif defined(__linux__)
-#include "impl/osw_unix.c"
 #else
-#error "The target platform is not supported by the OSW!"
+#include "impl/osw_unix.c"
 #endif
+
+#ifdef OSW_NET
+#include "impl/osw_net.c"
+#endif
+
+_OSW_C_END
 

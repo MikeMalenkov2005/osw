@@ -5,3 +5,4 @@
 -pedantic
 -Wno-long-long
 -Os
+-DOSW_NET

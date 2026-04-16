@@ -14,5 +14,5 @@ macros to your compiler definitions.
 
 ## Extended Functionality
 
-Currently no extended functionality is supported.
+- `OSW_NET` - The networking API extension (stream & datagram sockets).
 
